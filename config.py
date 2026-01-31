@@ -42,7 +42,7 @@ class Config:
     }
     
     # Speed Optimization Settings
-    WORKERS = 8
+    WORKERS = 100
     SLEEP_THRESHOLD = 60
     DOWNLOAD_LOCATION = "/tmp/downloads/"  # Use /tmp for Render
     CHUNK_SIZE = 512 * 1024  # 512KB chunks

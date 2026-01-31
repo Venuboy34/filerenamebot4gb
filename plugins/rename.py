@@ -1,4 +1,5 @@
 import os
+import time
 import datetime
 from pyrogram import Client, filters
 from pyrogram.types import ForceReply
@@ -80,42 +81,49 @@ async def rename_file(client, message):
     # Get thumbnail
     thumb = await db.get_thumbnail(user_id)
     
-    # Start uploading
+    # Start processing
     status_msg = await message.reply("⏳ <b>Processing your file...</b>")
     
     try:
-        # Download file
-        await status_msg.edit("📥 <b>Downloading file...</b>")
-        file_path = await original_message.download()
+        # Download file with progress
+        start_time = time.time()
+        file_path = await original_message.download(
+            progress=download_progress,
+            progress_args=(status_msg, start_time)
+        )
         
         # Rename file
         new_path = os.path.join(os.path.dirname(file_path), new_name)
         os.rename(file_path, new_path)
         
-        # Upload file
+        # Upload file with progress
         await status_msg.edit("📤 <b>Uploading renamed file...</b>")
+        start_time = time.time()
         
         if upload_as_doc:
             await message.reply_document(
                 document=new_path,
                 thumb=thumb,
                 caption=f"<b>✅ File renamed successfully!</b>\n\n<b>New Name:</b> <code>{new_name}</code>",
-                progress=progress_callback,
-                progress_args=(status_msg,)
+                progress=upload_progress,
+                progress_args=(status_msg, start_time)
             )
         else:
             await message.reply_video(
                 video=new_path,
                 thumb=thumb,
                 caption=f"<b>✅ File renamed successfully!</b>\n\n<b>New Name:</b> <code>{new_name}</code>",
-                progress=progress_callback,
-                progress_args=(status_msg,)
+                progress=upload_progress,
+                progress_args=(status_msg, start_time)
             )
         
         await status_msg.delete()
         
         # Clean up
-        os.remove(new_path)
+        try:
+            os.remove(new_path)
+        except:
+            pass
         del user_files[user_id]
         
     except Exception as e:
@@ -123,10 +131,104 @@ async def rename_file(client, message):
         if user_id in user_files:
             del user_files[user_id]
 
-async def progress_callback(current, total, status_msg):
-    """Progress callback for file upload"""
+async def download_progress(current, total, status_msg, start_time):
+    """Progress callback for file download with speed and ETA"""
+    now = time.time()
+    diff = now - start_time
+    
+    if diff < 1:
+        return
+    
     try:
-        percent = (current / total) * 100
-        await status_msg.edit(f"📤 <b>Uploading:</b> {percent:.1f}%")
-    except:
+        percentage = current * 100 / total
+        speed = current / diff
+        elapsed_time = round(diff)
+        
+        if current == total:
+            return
+        
+        eta = round((total - current) / speed)
+        
+        # Format time
+        def time_formatter(seconds):
+            minutes, seconds = divmod(seconds, 60)
+            hours, minutes = divmod(minutes, 60)
+            days, hours = divmod(hours, 24)
+            
+            tmp = ""
+            if days:
+                tmp += f"{days}d "
+            if hours:
+                tmp += f"{hours}h "
+            if minutes:
+                tmp += f"{minutes}m "
+            if seconds:
+                tmp += f"{seconds}s"
+            return tmp.strip()
+        
+        progress_str = "".join(["█" if i <= percentage / 10 else "░" for i in range(10)])
+        
+        tmp = (
+            f"📥 <b>Downloading...</b>\n\n"
+            f"<code>{progress_str}</code> {percentage:.1f}%\n\n"
+            f"<b>Total Size:</b> {get_size(total)}\n"
+            f"<b>Downloaded:</b> {get_size(current)}\n"
+            f"<b>Speed:</b> {get_size(speed)}/s\n"
+            f"<b>ETA:</b> {time_formatter(eta)}\n"
+            f"<b>Elapsed:</b> {time_formatter(elapsed_time)}"
+        )
+        
+        await status_msg.edit(tmp)
+    except Exception as e:
+        pass
+
+async def upload_progress(current, total, status_msg, start_time):
+    """Progress callback for file upload with speed and ETA"""
+    now = time.time()
+    diff = now - start_time
+    
+    if diff < 1:
+        return
+    
+    try:
+        percentage = current * 100 / total
+        speed = current / diff
+        elapsed_time = round(diff)
+        
+        if current == total:
+            return
+        
+        eta = round((total - current) / speed)
+        
+        # Format time
+        def time_formatter(seconds):
+            minutes, seconds = divmod(seconds, 60)
+            hours, minutes = divmod(minutes, 60)
+            days, hours = divmod(hours, 24)
+            
+            tmp = ""
+            if days:
+                tmp += f"{days}d "
+            if hours:
+                tmp += f"{hours}h "
+            if minutes:
+                tmp += f"{minutes}m "
+            if seconds:
+                tmp += f"{seconds}s"
+            return tmp.strip()
+        
+        progress_str = "".join(["█" if i <= percentage / 10 else "░" for i in range(10)])
+        
+        tmp = (
+            f"📤 <b>Uploading...</b>\n\n"
+            f"<code>{progress_str}</code> {percentage:.1f}%\n\n"
+            f"<b>Total Size:</b> {get_size(total)}\n"
+            f"<b>Uploaded:</b> {get_size(current)}\n"
+            f"<b>Speed:</b> {get_size(speed)}/s\n"
+            f"<b>ETA:</b> {time_formatter(eta)}\n"
+            f"<b>Elapsed:</b> {time_formatter(elapsed_time)}"
+        )
+        
+        await status_msg.edit(tmp)
+    except Exception as e:
         pass

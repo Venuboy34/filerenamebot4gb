@@ -1,6 +1,6 @@
-pyrogram==2.0.106
+pyrogram
 TgCrypto
-motor==3.3.2
-pymongo==4.6.1
+motor
+pymongo
 pytz
 requests

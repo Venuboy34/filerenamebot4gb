@@ -15,6 +15,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Create necessary directories
+def setup_directories():
+    """Create required directories if they don't exist"""
+    directories = [
+        Config.WORKDIR,
+        Config.DOWNLOAD_LOCATION,
+    ]
+    for directory in directories:
+        try:
+            os.makedirs(directory, exist_ok=True)
+            logger.info(f"✅ Directory created/verified: {directory}")
+        except Exception as e:
+            logger.error(f"❌ Failed to create directory {directory}: {e}")
+
 # Initialize Flask app for health check
 web_app = Flask(__name__)
 
@@ -55,6 +69,8 @@ async def start_bot():
         logger.info(f"✅ Bot started as @{me.username}")
         logger.info(f"⚡ Workers: {Config.WORKERS}")
         logger.info(f"⚡ Sleep Threshold: {Config.SLEEP_THRESHOLD}s")
+        logger.info(f"📁 Work Directory: {Config.WORKDIR}")
+        logger.info(f"📁 Download Location: {Config.DOWNLOAD_LOCATION}")
         logger.info(f"📊 Free User Limit: {Config.FREE_USER_LIMIT / (1024**3):.1f}GB")
         logger.info(f"💎 Premium User Limit: {Config.PREMIUM_USER_LIMIT / (1024**3):.1f}GB")
         
@@ -64,7 +80,7 @@ async def start_bot():
             logger.info("✅ TgCrypto installed - Maximum speed enabled!")
         except ImportError:
             logger.warning("⚠️ TgCrypto not installed - Install for 10x speed boost!")
-            logger.warning("   Run: pip install tgcrypto --break-system-packages")
+            logger.warning("   Run: pip install tgcrypto")
         
         # Send startup notification to admins
         if Config.ADMINS:
@@ -119,6 +135,10 @@ if __name__ == "__main__":
     print(f"⚡ Workers: {Config.WORKERS}")
     print(f"⚡ Sleep Threshold: {Config.SLEEP_THRESHOLD}s")
     print("=" * 60)
+    
+    # Setup directories
+    print("📁 Setting up directories...")
+    setup_directories()
     
     # Start Flask server in a separate thread
     print("🌐 Starting health check server...")

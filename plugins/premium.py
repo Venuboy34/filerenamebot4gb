@@ -221,8 +221,16 @@ async def premium_button(client, callback_query):
             await callback_query.answer("⚠️ Invalid Premium Package.", show_alert=True)
     except Exception as e:
         print(f"Error In buy_ - {e}")
+
+# Custom filter for successful payments
+def successful_payment_filter(_, __, message):
+    """Filter to detect successful payment messages"""
+    return bool(message.successful_payment)
+
+# Create the filter using Pyrogram's create method
+successful_payment = filters.create(successful_payment_filter)
  
-@Client.on_message(filters.successful_payment)
+@Client.on_message(successful_payment & filters.private)
 async def successful_premium_payment(client, message):
     try:
         amount = int(message.successful_payment.total_amount)

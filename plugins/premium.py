@@ -222,10 +222,17 @@ async def premium_button(client, callback_query):
     except Exception as e:
         print(f"Error In buy_ - {e}")
 
-# Custom filter for successful payments
+# ============================================================================
+# FIXED: Proper filter for successful payments
+# This fixes the AttributeError: 'Message' object has no attribute 'successful_payment'
+# ============================================================================
 def successful_payment_filter(_, __, message):
-    """Filter to detect successful payment messages"""
-    return bool(message.successful_payment)
+    """Filter to detect successful payment messages - FIXED VERSION"""
+    try:
+        # Check if the message has the successful_payment attribute and it's not None
+        return hasattr(message, 'successful_payment') and message.successful_payment is not None
+    except AttributeError:
+        return False
 
 # Create the filter using Pyrogram's create method
 successful_payment = filters.create(successful_payment_filter)

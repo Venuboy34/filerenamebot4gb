@@ -42,10 +42,10 @@ class Config:
     }
     
     # Speed Optimization Settings
-    WORKERS = 20
+    WORKERS = 8
     SLEEP_THRESHOLD = 60
-    DOWNLOAD_LOCATION = "./downloads/"
+    DOWNLOAD_LOCATION = "/tmp/downloads/"  # Use /tmp for Render
     CHUNK_SIZE = 512 * 1024  # 512KB chunks
     PROGRESS_UPDATE_DELAY = 2  # Update every 2 seconds
     SESSION_NAME = "bot_session"
-    WORKDIR = "./session"
+    WORKDIR = "/tmp"  # Use /tmp for session files on Render

@@ -222,17 +222,6 @@ async def premium_button(client, callback_query):
     except Exception as e:
         print(f"Error In buy_ - {e}")
  
-@Client.on_pre_checkout_query()
-async def pre_checkout_handler(client, query):
-    try:
-        if query.payload.startswith("renamepremium_"):
-            await query.answer(success=True)
-        else:
-            await query.answer(success=False, error_message="⚠️ Invalid Purchase Type.")
-    except Exception as e:
-        print(f"Pre-checkout error: {e}")
-        await query.answer(success=False, error_message="🚫 Unexpected Error Occurred.")
-
 @Client.on_message(filters.successful_payment)
 async def successful_premium_payment(client, message):
     try:
@@ -240,6 +229,12 @@ async def successful_premium_payment(client, message):
         user_id = message.from_user.id
         time_zone = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
         current_time = time_zone.strftime("%d-%m-%Y | %I:%M:%S %p") 
+        
+        # Get amount from invoice payload
+        payload = message.successful_payment.invoice_payload
+        if payload.startswith("renamepremium_"):
+            amount = int(payload.split("_")[1])
+        
         if amount in STAR_PREMIUM_PLANS:
             time = STAR_PREMIUM_PLANS[amount]
             seconds = await get_seconds(time)

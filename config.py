@@ -40,3 +40,12 @@ class Config:
         250: "6 months",
         450: "1 year"
     }
+    
+    # Speed Optimization Settings
+    WORKERS = 20
+    SLEEP_THRESHOLD = 60
+    DOWNLOAD_LOCATION = "./downloads/"
+    CHUNK_SIZE = 512 * 1024  # 512KB chunks
+    PROGRESS_UPDATE_DELAY = 2  # Update every 2 seconds
+    SESSION_NAME = "bot_session"
+    WORKDIR = "./session"

@@ -5,3 +5,5 @@ pymongo
 pytz
 requests
 flask
+pillow
+aiofiles

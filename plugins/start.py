@@ -1,10 +1,54 @@
 import asyncio
+import datetime
+import pytz
 import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ForceReply, InputMediaPhoto, CallbackQuery
 from config import Config
 from database import db
 from script import script
+
+def get_greeting():
+    """Get time-based greeting with emoji - Works for both India (IST) and Sri Lanka (SLST)"""
+    # Both India (IST) and Sri Lanka (SLST) are UTC+5:30, so using Asia/Kolkata works for both
+    # You can also use 'Asia/Colombo' for Sri Lanka - both are the same timezone
+    timezone = pytz.timezone('Asia/Kolkata')  # Same as Asia/Colombo (UTC+5:30)
+    current_hour = datetime.datetime.now(timezone).hour
+    
+    if 5 <= current_hour < 12:
+        return "Good Morning 🌞"
+    elif 12 <= current_hour < 19:
+        return "Good Afternoon ☀️"
+    else:
+        return "Good Night 🌚"
+
+def get_random_image():
+    """Get random welcome image with fallback"""
+    try:
+        # Try to get image from your API with timeout
+        response = requests.get(Config.WELCOME_IMAGE_API, timeout=3, allow_redirects=True)
+        if response.status_code == 200:
+            return response.url
+    except:
+        pass
+    
+    # Fallback to alternative random image APIs
+    fallback_urls = [
+        "https://api.aniwallpaper.workers.dev/random?type=boy",
+        "https://picsum.photos/800/600",
+        "https://source.unsplash.com/random/800x600"
+    ]
+    
+    for url in fallback_urls:
+        try:
+            response = requests.head(url, timeout=2)
+            if response.status_code == 200:
+                return url
+        except:
+            continue
+    
+    # Ultimate fallback - a static image
+    return "https://picsum.photos/800/600"
 
 async def check_force_sub(client, message):
     """Check if user has joined force sub channels"""
@@ -48,11 +92,11 @@ async def start_command(client, message):
     await asyncio.sleep(2)
     await loading_msg.delete()
     
-    # Get random welcome image
-    try:
-        welcome_image = requests.get(Config.WELCOME_IMAGE_API).url
-    except:
-        welcome_image = "https://api.aniwallpaper.workers.dev/random?type=boy"
+    # Get greeting based on time (NEW FEATURE)
+    greeting = get_greeting()
+    
+    # Get random welcome image (NEW FEATURE - optimized with fallbacks)
+    welcome_image = get_random_image()
     
     # Create buttons
     buttons = [
@@ -69,10 +113,10 @@ async def start_command(client, message):
         ]
     ]
     
-    # Send welcome message
+    # Send welcome message (UPDATED - using greeting instead of "👋")
     await message.reply_photo(
         photo=welcome_image,
-        caption=script.START_TXT.format(message.from_user.first_name, "👋"),
+        caption=script.START_TXT.format(message.from_user.first_name, greeting),
         reply_markup=InlineKeyboardMarkup(buttons)
     )
 
@@ -114,10 +158,11 @@ async def callback_handler(client, query: CallbackQuery):
     user_id = query.from_user.id
     
     if data == "start":
-        try:
-            welcome_image = requests.get(Config.WELCOME_IMAGE_API).url
-        except:
-            welcome_image = "https://api.aniwallpaper.workers.dev/random?type=boy"
+        # Get greeting based on time (NEW FEATURE)
+        greeting = get_greeting()
+        
+        # Get random welcome image (NEW FEATURE - optimized with fallbacks)
+        welcome_image = get_random_image()
         
         buttons = [
             [
@@ -135,12 +180,12 @@ async def callback_handler(client, query: CallbackQuery):
         
         try:
             await query.message.edit_media(
-                media=InputMediaPhoto(welcome_image, caption=script.START_TXT.format(query.from_user.first_name, "👋")),
+                media=InputMediaPhoto(welcome_image, caption=script.START_TXT.format(query.from_user.first_name, greeting)),
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         except:
             await query.message.edit_caption(
-                caption=script.START_TXT.format(query.from_user.first_name, "👋"),
+                caption=script.START_TXT.format(query.from_user.first_name, greeting),
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
     

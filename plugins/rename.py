@@ -52,12 +52,13 @@ async def handle_file(client, message):
         'file_size': file_size
     }
     
-    # Ask for new filename
+    # Ask for new filename - NOW AS A REPLY TO THE USER'S FILE
     await message.reply(
         f"<b>📝 Current File Name:</b> <code>{file.file_name}</code>\n\n"
         f"<b>📊 File Size:</b> <code>{get_size(file_size)}</code>\n\n"
         f"<b>Send me the new file name (with extension)</b>",
-        reply_markup=ForceReply(True)
+        reply_markup=ForceReply(True),
+        quote=True  # This makes it a reply to the file message
     )
 
 @Client.on_message(filters.text & filters.private & filters.reply)
@@ -79,8 +80,8 @@ async def rename_file(client, message):
     # Get upload mode
     upload_as_doc = await db.get_upload_mode(user_id)
     
-    # Get thumbnail
-    thumb = await db.get_thumbnail(user_id)
+    # Get thumbnail file_id (FIXED - use file_id directly, no download needed)
+    thumb_id = await db.get_thumbnail(user_id)
     
     # Start processing
     status_msg = await message.reply("⏳ <b>Processing your file...</b>")
@@ -110,7 +111,7 @@ async def rename_file(client, message):
                 client=client,
                 message=message,
                 file_path=new_path,
-                thumb=thumb,
+                thumb=thumb_id,  # Pass file_id directly
                 new_name=new_name,
                 status_msg=status_msg,
                 start_time=start_time
@@ -120,7 +121,7 @@ async def rename_file(client, message):
                 client=client,
                 message=message,
                 file_path=new_path,
-                thumb=thumb,
+                thumb=thumb_id,  # Pass file_id directly
                 new_name=new_name,
                 status_msg=status_msg,
                 start_time=start_time
@@ -133,6 +134,7 @@ async def rename_file(client, message):
             os.remove(new_path)
         except:
             pass
+        
         del user_files[user_id]
         
     except Exception as e:
@@ -152,16 +154,20 @@ async def fast_download(client, message, status_msg, start_time):
     async def progress_callback(current, total):
         await download_progress(current, total, status_msg, progress_data)
     
+    # Create downloads directory
+    download_dir = "downloads/files"
+    os.makedirs(download_dir, exist_ok=True)
+    
     # Download with optimized settings
     file_path = await message.download(
-        progress=progress_callback,
-        block=True  # Better for large files
+        file_name=download_dir + "/",
+        progress=progress_callback
     )
     
     return file_path
 
 async def fast_upload_document(client, message, file_path, thumb, new_name, status_msg, start_time):
-    """Optimized document upload"""
+    """Optimized document upload - thumb is file_id string"""
     
     progress_data = {
         'last_update': 0,
@@ -171,15 +177,17 @@ async def fast_upload_document(client, message, file_path, thumb, new_name, stat
     async def progress_callback(current, total):
         await upload_progress(current, total, status_msg, progress_data)
     
+    # Use thumb parameter directly (it's already a file_id string or None)
     await message.reply_document(
         document=file_path,
-        thumb=thumb,
+        thumb=thumb,  # Pyrogram accepts file_id directly
         caption=f"<b>✅ File renamed successfully!</b>\n\n<b>New Name:</b> <code>{new_name}</code>",
-        progress=progress_callback
+        progress=progress_callback,
+        force_document=True
     )
 
 async def fast_upload_video(client, message, file_path, thumb, new_name, status_msg, start_time):
-    """Optimized video upload"""
+    """Optimized video upload - thumb is file_id string"""
     
     progress_data = {
         'last_update': 0,
@@ -189,9 +197,10 @@ async def fast_upload_video(client, message, file_path, thumb, new_name, status_
     async def progress_callback(current, total):
         await upload_progress(current, total, status_msg, progress_data)
     
+    # Use thumb parameter directly (it's already a file_id string or None)
     await message.reply_video(
         video=file_path,
-        thumb=thumb,
+        thumb=thumb,  # Pyrogram accepts file_id directly
         caption=f"<b>✅ File renamed successfully!</b>\n\n<b>New Name:</b> <code>{new_name}</code>",
         progress=progress_callback,
         supports_streaming=True
@@ -201,8 +210,8 @@ async def download_progress(current, total, status_msg, progress_data):
     """Optimized progress callback for downloads with custom UI"""
     now = time.time()
     
-    # Update every 2 seconds to reduce API calls
-    if now - progress_data['last_update'] < 2:
+    # Update every 3 seconds to reduce API calls and improve speed
+    if now - progress_data['last_update'] < 3:
         return
     
     progress_data['last_update'] = now
@@ -236,10 +245,10 @@ async def download_progress(current, total, status_msg, progress_data):
         
         # Format message
         progress_text = (
-            f"<b>Downloading...</b>\n\n"
+            f"<b>📥 Downloading...</b>\n\n"
             f"<code>{progress_bar}</code>\n\n"
-            f"📁 <b>Size :</b> {get_size(current)} | {get_size(total)}\n"
-            f"⏳️ <b>Done :</b> {percentage:.2f}%\n"
+            f"📁 <b>Size :</b> {get_size(current)} / {get_size(total)}\n"
+            f"⏳️ <b>Done :</b> {percentage:.1f}%\n"
             f"🚀 <b>Speed :</b> {get_size(speed)}/s\n"
             f"⏰️ <b>ETA :</b> {eta_str}"
         )
@@ -253,8 +262,8 @@ async def upload_progress(current, total, status_msg, progress_data):
     """Optimized progress callback for uploads with custom UI"""
     now = time.time()
     
-    # Update every 2 seconds to reduce API calls
-    if now - progress_data['last_update'] < 2:
+    # Update every 3 seconds to reduce API calls and improve speed
+    if now - progress_data['last_update'] < 3:
         return
     
     progress_data['last_update'] = now
@@ -288,10 +297,10 @@ async def upload_progress(current, total, status_msg, progress_data):
         
         # Format message
         progress_text = (
-            f"<b>Uploading...</b>\n\n"
+            f"<b>📤 Uploading...</b>\n\n"
             f"<code>{progress_bar}</code>\n\n"
-            f"📁 <b>Size :</b> {get_size(current)} | {get_size(total)}\n"
-            f"⏳️ <b>Done :</b> {percentage:.2f}%\n"
+            f"📁 <b>Size :</b> {get_size(current)} / {get_size(total)}\n"
+            f"⏳️ <b>Done :</b> {percentage:.1f}%\n"
             f"🚀 <b>Speed :</b> {get_size(speed)}/s\n"
             f"⏰️ <b>ETA :</b> {eta_str}"
         )

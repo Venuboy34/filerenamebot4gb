@@ -39,7 +39,7 @@ class script(object):
 ├⍟ Dᴀᴛᴀʙᴀsᴇ : <a href='https://www.mongodb.com/'>ᴍᴏɴɢᴏ ᴅʙ</a> 
 ├⍟ Bᴏᴛ Sᴇʀᴠᴇʀ : <a href='https://heroku.com/'>ʜᴇʀᴏᴋᴜ</a> 
 ├⍟ Fɪʟᴇ Lɪᴍɪᴛ : 𝟺ɢʙ 💾
-├⍟ Bᴜɪʟᴅ Sᴛᴀᴛᴜs : ᴠ1.4 [ ꜱᴛᴀʙʟᴇ ]
+├⍟ Bᴜɪʟᴅ Sᴛᴀᴛᴜs : ᴠ2.4 [ ꜱᴛᴀʙʟᴇ ]
 ╰───────────────⍟</b>"""
 
     PREMIUM_TXT = """<b>💎 ᴘʀᴇᴍɪᴜᴍ ғᴇᴀᴛᴜʀᴇs

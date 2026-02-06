@@ -2,15 +2,16 @@ import os
 
 class Config:
     # Bot Configuration
-    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-    API_ID = int(os.environ.get("API_ID", "12345"))
-    API_HASH = os.environ.get("API_HASH", "")
+    BOT_TOKEN = "8159032196:AAHcvSp1Y_h5ZXaHSX7-n6H_GoKtFR_VLxk"
+    API_ID = 20288994
+    API_HASH = "d702614912f1ad370a0d18786002adbf"
     
     # Database
-    MONGODB_URL = os.environ.get("MONGODB_URL", "")
+    MONGODB_URL = "mongodb+srv://Zerobothost:zero8907@cluster0.szwdcyb.mongodb.net/?appName=Cluster0"
     
     # Admin
-    ADMINS = list(set(int(x) for x in os.environ.get("ADMINS", "").split()))
+    ADMINS = [8498741978]  # Single admin ID
+    # If you need multiple admins, use: ADMINS = [8498741978, admin2_id, admin3_id]
     
     # Force Subscribe
     FORCE_SUB_CHANNELS = [
@@ -23,7 +24,7 @@ class Config:
     PREMIUM_USER_LIMIT = 4 * 1024 * 1024 * 1024  # 4GB in bytes
     
     # Logs
-    PREMIUM_LOGS = int(os.environ.get("PREMIUM_LOGS", "0"))
+    PREMIUM_LOGS = -1003712131076
     
     # Images
     FORCE_SUB_IMAGE = "https://i.ibb.co/pr2H8cwT/img-8312532076.jpg"
